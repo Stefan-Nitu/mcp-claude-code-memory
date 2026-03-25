@@ -97,7 +97,7 @@ npx @modelcontextprotocol/inspector npx -y mcp-claude-code-memory
 
 ## Available Actions
 
-The server exposes **1 tool** (`claude_code_history`) with **4 actions**:
+The server exposes **1 tool** (`claude_code_memory`) with **4 actions**:
 
 | Action | Description | Required Params | Optional Params |
 |--------|-------------|-----------------|-----------------|

@@ -22,14 +22,14 @@ const index = new SearchIndex();
 const handler = createHandler(store, index);
 
 server.tool(
-  "claude_code_history",
-  `Search, browse, and read Claude Code conversation history.
+  "claude_code_memory",
+  `Use this tool when the user asks about past work, previous conversations, earlier sessions, what they worked on recently, or anything that happened in a different Claude Code session. This tool searches across ALL past Claude Code conversations, not just the current one.
 
 Actions:
-- search: BM25 keyword search (requires: query, optional: project, limit)
+- stats: Overview of all conversations and projects
 - list: Browse by project/date (optional: project, after, before, limit)
-- read: Read full conversation (requires: session_id, optional: offset, limit)
-- stats: Overview of all conversations and projects`,
+- search: BM25 keyword search (requires: query, optional: project, limit)
+- read: Read full conversation (requires: session_id from search/list results, optional: offset, limit)`,
   historyToolSchema.shape,
   async (args) => ({
     content: [{ type: "text", text: handler.handle(args) }],
