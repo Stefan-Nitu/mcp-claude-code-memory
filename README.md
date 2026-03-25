@@ -1,7 +1,7 @@
-[![NPM Version](https://img.shields.io/npm/v/mcp-claude-code-memory)](https://www.npmjs.com/package/mcp-claude-code-memory)
-[![NPM Downloads](https://img.shields.io/npm/dm/mcp-claude-code-memory)](https://www.npmjs.com/package/mcp-claude-code-memory)
-[![CI Status](https://github.com/Stefan-Nitu/mcp-claude-code-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/Stefan-Nitu/mcp-claude-code-memory/actions/workflows/ci.yml)
-[![MIT Licensed](https://img.shields.io/npm/l/mcp-claude-code-memory)](https://github.com/Stefan-Nitu/mcp-claude-code-memory/blob/main/LICENSE)
+[![NPM Version](https://img.shields.io/npm/v/mcp-claude-code-conversation-history)](https://www.npmjs.com/package/mcp-claude-code-conversation-history)
+[![NPM Downloads](https://img.shields.io/npm/dm/mcp-claude-code-conversation-history)](https://www.npmjs.com/package/mcp-claude-code-conversation-history)
+[![CI Status](https://github.com/Stefan-Nitu/mcp-claude-code-conversation-history/actions/workflows/ci.yml/badge.svg)](https://github.com/Stefan-Nitu/mcp-claude-code-conversation-history/actions/workflows/ci.yml)
+[![MIT Licensed](https://img.shields.io/npm/l/mcp-claude-code-conversation-history)](https://github.com/Stefan-Nitu/mcp-claude-code-conversation-history/blob/main/LICENSE)
 
 # MCP Claude Code Memory
 
@@ -24,19 +24,29 @@ MCP Claude Code Memory indexes those files and exposes them through a single MCP
 ### Via npm (Recommended)
 
 ```bash
-npm install -g mcp-claude-code-memory
+npm install -g mcp-claude-code-conversation-history
 ```
 
 ### From Source
 
 ```bash
-git clone https://github.com/Stefan-Nitu/mcp-claude-code-memory.git
-cd mcp-claude-code-memory
+git clone https://github.com/Stefan-Nitu/mcp-claude-code-conversation-history.git
+cd mcp-claude-code-conversation-history
 bun install
 bun run build
 ```
 
 > Requires Bun v1.3.8+ (development) and Node.js v20+ (runtime)
+
+### Add a CLAUDE.md hint
+
+MCP tools are deferred (loaded on-demand), so Claude may not use them automatically. Add this to your project's `CLAUDE.md` to ensure it does:
+
+```markdown
+## Conversation History
+
+You have access to past conversation history via MCP. Always use it when the user asks about previous work, past sessions, or anything from a prior conversation.
+```
 
 ## Quick Start
 
@@ -47,9 +57,9 @@ Add to `~/.claude.json`:
 ```json
 {
   "mcpServers": {
-    "mcp-claude-code-memory": {
+    "mcp-claude-code-conversation-history": {
       "command": "npx",
-      "args": ["-y", "mcp-claude-code-memory"]
+      "args": ["-y", "mcp-claude-code-conversation-history"]
     }
   }
 }
@@ -60,8 +70,8 @@ Or if installed globally:
 ```json
 {
   "mcpServers": {
-    "mcp-claude-code-memory": {
-      "command": "mcp-claude-code-memory"
+    "mcp-claude-code-conversation-history": {
+      "command": "mcp-claude-code-conversation-history"
     }
   }
 }
@@ -79,9 +89,9 @@ Add to your Claude Desktop configuration file:
 ```json
 {
   "mcpServers": {
-    "mcp-claude-code-memory": {
+    "mcp-claude-code-conversation-history": {
       "command": "npx",
-      "args": ["-y", "mcp-claude-code-memory"]
+      "args": ["-y", "mcp-claude-code-conversation-history"]
     }
   }
 }
@@ -92,12 +102,12 @@ Add to your Claude Desktop configuration file:
 Test the server interactively:
 
 ```bash
-npx @modelcontextprotocol/inspector npx -y mcp-claude-code-memory
+npx @modelcontextprotocol/inspector npx -y mcp-claude-code-conversation-history
 ```
 
 ## Available Actions
 
-The server exposes **1 tool** (`claude_code_memory`) with **4 actions**:
+The server exposes **1 tool** (`claude_code_conversation_history`) with **4 actions**:
 
 | Action | Description | Required Params | Optional Params |
 |--------|-------------|-----------------|-----------------|
@@ -191,7 +201,7 @@ All actions return structured JSON:
 ### Project Structure
 
 ```
-mcp-claude-code-memory/
+mcp-claude-code-conversation-history/
 ├── src/
 │   ├── index.ts                     # MCP server entry point
 │   ├── types.ts                     # Shared type definitions

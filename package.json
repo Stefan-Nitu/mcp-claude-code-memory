@@ -1,11 +1,11 @@
 {
-  "name": "mcp-claude-code-memory",
-  "version": "0.1.2",
+  "name": "mcp-claude-code-conversation-history",
+  "version": "0.2.0",
   "description": "MCP server for searching and browsing Claude Code conversation history",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "mcp-claude-code-memory": "dist/index.js"
+    "mcp-claude-code-conversation-history": "dist/index.js"
   },
   "files": [
     "dist",
@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Stefan-Nitu/mcp-claude-code-memory.git"
+    "url": "https://github.com/Stefan-Nitu/mcp-claude-code-conversation-history.git"
   },
   "author": "Stefan Nitu",
   "license": "MIT",

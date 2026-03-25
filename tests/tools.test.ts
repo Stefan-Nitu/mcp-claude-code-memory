@@ -28,7 +28,7 @@ function setupFixture(projectDir: string, sessionId: string, lines: string[]) {
   );
 }
 
-describe("claude_code_history tool", () => {
+describe("claude_code_conversation_history tool", () => {
   let store: ConversationStore;
   let index: SearchIndex;
   let handler: ReturnType<typeof createHandler>;
@@ -279,6 +279,336 @@ describe("claude_code_history tool", () => {
       expect(uiProject).toBeDefined();
       expect(uiProject.conversationCount).toBe(1);
       expect(uiProject.messageCount).toBe(3);
+    });
+  });
+
+  describe("compact output", () => {
+    it("uses basename of cwd as project name in list", () => {
+      // Act
+      const result = handler.handle({ action: "list" });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      const uiConv = parsed.conversations.find(
+        (c: { sessionId: string }) => c.sessionId === "sess-ui",
+      );
+      expect(uiConv.project).toBe("ui");
+    });
+
+    it("uses basename of cwd as project name in search", () => {
+      // Act
+      const result = handler.handle({
+        action: "search",
+        query: "CSS buttons",
+      });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      const uiResult = parsed.results.find(
+        (r: { sessionId: string }) => r.sessionId === "sess-ui",
+      );
+      expect(uiResult.project).toBe("ui");
+    });
+
+    it("uses basename of cwd as project name in stats", () => {
+      // Act
+      const result = handler.handle({ action: "stats" });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      const uiProject = parsed.projects.find(
+        (p: { project: string }) => p.project === "ui",
+      );
+      expect(uiProject).toBeDefined();
+    });
+
+    it("uses basename of cwd as project name in read", () => {
+      // Act
+      const result = handler.handle({
+        action: "read",
+        session_id: "sess-ui",
+      });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      expect(parsed.project).toBe("ui");
+    });
+
+    it("cleans project name from raw dir name when cwd is empty", async () => {
+      // Arrange
+      setupFixture("-Users-test-Projects-nocwd", "sess-nocwd", [
+        makeLine({
+          uuid: "u-nocwd",
+          cwd: undefined,
+          message: { role: "user", content: "test no cwd" },
+        }),
+      ]);
+      const s = new ConversationStore(TEST_DIR);
+      await s.load();
+      const idx = new SearchIndex();
+      idx.buildFrom(s.getAllConversations());
+      const h = createHandler(s, idx);
+      h.setReady();
+
+      // Act
+      const result = h.handle({ action: "list", project: "nocwd" });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      expect(parsed.conversations[0].project).toBe("nocwd");
+    });
+
+    it("excludes cwd from list output", () => {
+      // Act
+      const result = handler.handle({ action: "list" });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      for (const conv of parsed.conversations) {
+        expect(conv.cwd).toBeUndefined();
+      }
+    });
+
+    it("excludes cwd from search output", () => {
+      // Act
+      const result = handler.handle({ action: "search", query: "fix" });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      for (const r of parsed.results) {
+        expect(r.cwd).toBeUndefined();
+      }
+    });
+
+    it("includes cwd in read output", () => {
+      // Act
+      const result = handler.handle({
+        action: "read",
+        session_id: "sess-ui",
+      });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      expect(parsed.cwd).toBe("/Users/test/Projects/ui");
+    });
+
+    it("uses full ISO timestamps in list output", () => {
+      // Act
+      const result = handler.handle({ action: "list" });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      for (const conv of parsed.conversations) {
+        expect(conv.startedAt).toContain("T");
+        expect(conv.lastMessageAt).toContain("T");
+      }
+    });
+
+    it("keeps full ISO timestamps in read output", () => {
+      // Act
+      const result = handler.handle({
+        action: "read",
+        session_id: "sess-ui",
+      });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      expect(parsed.startedAt).toContain("T");
+      expect(parsed.lastMessageAt).toContain("T");
+    });
+
+    it("truncates search match content to 200 chars", async () => {
+      // Arrange
+      const longContent = "x".repeat(300);
+      setupFixture("-Users-test-Projects-long", "sess-long", [
+        makeLine({
+          uuid: "u-long",
+          cwd: "/Users/test/Projects/long",
+          message: { role: "user", content: longContent },
+        }),
+      ]);
+      const s = new ConversationStore(TEST_DIR);
+      await s.load();
+      const idx = new SearchIndex();
+      idx.buildFrom(s.getAllConversations());
+      const h = createHandler(s, idx);
+      h.setReady();
+
+      // Act
+      const result = h.handle({ action: "search", query: "xxx" });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      const longResult = parsed.results.find(
+        (r: { sessionId: string }) => r.sessionId === "sess-long",
+      );
+      expect(longResult).toBeDefined();
+      for (const m of longResult.matches) {
+        expect(m.content.length).toBeLessThanOrEqual(200);
+      }
+    });
+
+    it("caps search matches to 5 per result", async () => {
+      // Arrange — create a conversation with 10 matching messages
+      const lines = Array.from({ length: 10 }, (_, i) =>
+        makeLine({
+          uuid: `u-many-${i}`,
+          cwd: "/Users/test/Projects/many",
+          timestamp: `2026-03-25T${String(10 + i).padStart(2, "0")}:00:00.000Z`,
+          message: { role: "user", content: `searchable keyword ${i}` },
+        }),
+      );
+      setupFixture("-Users-test-Projects-many", "sess-many", lines);
+      const s = new ConversationStore(TEST_DIR);
+      await s.load();
+      const idx = new SearchIndex();
+      idx.buildFrom(s.getAllConversations());
+      const h = createHandler(s, idx);
+      h.setReady();
+
+      // Act
+      const result = h.handle({
+        action: "search",
+        query: "searchable keyword",
+      });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      const manyResult = parsed.results.find(
+        (r: { sessionId: string }) => r.sessionId === "sess-many",
+      );
+      expect(manyResult).toBeDefined();
+      expect(manyResult.matches.length).toBeLessThanOrEqual(5);
+    });
+
+    it("truncates list preview to 150 chars", async () => {
+      // Arrange
+      const longMessage = "a]".repeat(100);
+      setupFixture("-Users-test-Projects-longprev", "sess-longprev", [
+        makeLine({
+          uuid: "u-longprev",
+          cwd: "/Users/test/Projects/longprev",
+          message: { role: "user", content: longMessage },
+        }),
+      ]);
+      const s = new ConversationStore(TEST_DIR);
+      await s.load();
+      const idx = new SearchIndex();
+      idx.buildFrom(s.getAllConversations());
+      const h = createHandler(s, idx);
+      h.setReady();
+
+      // Act
+      const result = h.handle({ action: "list", project: "longprev" });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      expect(parsed.conversations[0].preview.length).toBeLessThanOrEqual(150);
+    });
+
+    it("applies default limit of 20 to list when none specified", async () => {
+      // Arrange
+      for (let i = 0; i < 25; i++) {
+        setupFixture("-Users-test-Projects-bulk", `sess-bulk-${i}`, [
+          makeLine({
+            uuid: `u-bulk-${i}`,
+            cwd: "/Users/test/Projects/bulk",
+            timestamp: `2026-03-${String(i + 1).padStart(2, "0")}T10:00:00.000Z`,
+            message: { role: "user", content: `bulk message ${i}` },
+          }),
+        ]);
+      }
+      const s = new ConversationStore(TEST_DIR);
+      await s.load();
+      const idx = new SearchIndex();
+      idx.buildFrom(s.getAllConversations());
+      const h = createHandler(s, idx);
+      h.setReady();
+
+      // Act
+      const result = h.handle({ action: "list", project: "bulk" });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      expect(parsed.conversations).toHaveLength(20);
+    });
+
+    it("explicit limit overrides default in list", async () => {
+      // Arrange
+      for (let i = 0; i < 25; i++) {
+        setupFixture("-Users-test-Projects-bulk2", `sess-bulk2-${i}`, [
+          makeLine({
+            uuid: `u-bulk2-${i}`,
+            cwd: "/Users/test/Projects/bulk2",
+            timestamp: `2026-03-${String(i + 1).padStart(2, "0")}T10:00:00.000Z`,
+            message: { role: "user", content: `bulk2 message ${i}` },
+          }),
+        ]);
+      }
+      const s = new ConversationStore(TEST_DIR);
+      await s.load();
+      const idx = new SearchIndex();
+      idx.buildFrom(s.getAllConversations());
+      const h = createHandler(s, idx);
+      h.setReady();
+
+      // Act
+      const result = h.handle({ action: "list", project: "bulk2", limit: 5 });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      expect(parsed.conversations).toHaveLength(5);
+    });
+
+    it("returns raw project name when no cwd and no -Projects- in name", async () => {
+      // Arrange
+      setupFixture("plain-dir", "sess-plain", [
+        makeLine({
+          uuid: "u-plain",
+          cwd: undefined,
+          message: { role: "user", content: "test plain" },
+        }),
+      ]);
+      const s = new ConversationStore(TEST_DIR);
+      await s.load();
+      const idx = new SearchIndex();
+      idx.buildFrom(s.getAllConversations());
+      const h = createHandler(s, idx);
+      h.setReady();
+
+      // Act
+      const result = h.handle({ action: "list", project: "plain" });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      expect(parsed.conversations[0].project).toBe("plain-dir");
+    });
+
+    it("cleans project name in stats when conversation has no cwd", async () => {
+      // Arrange
+      setupFixture("-Users-test-Projects-nocwd-stats", "sess-nocwd-s", [
+        makeLine({
+          uuid: "u-nocwd-s",
+          cwd: undefined,
+          message: { role: "user", content: "test stats nocwd" },
+        }),
+      ]);
+      const s = new ConversationStore(TEST_DIR);
+      await s.load();
+      const idx = new SearchIndex();
+      idx.buildFrom(s.getAllConversations());
+      const h = createHandler(s, idx);
+      h.setReady();
+
+      // Act
+      const result = h.handle({ action: "stats" });
+
+      // Assert
+      const parsed = JSON.parse(result);
+      const proj = parsed.projects.find(
+        (p: { project: string }) => p.project === "nocwd-stats",
+      );
+      expect(proj).toBeDefined();
     });
   });
 

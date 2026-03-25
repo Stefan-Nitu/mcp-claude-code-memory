@@ -20,8 +20,6 @@ interface StoreStats {
   projects: ProjectStats[];
 }
 
-const PREVIEW_MAX_LENGTH = 200;
-
 export class ConversationStore {
   private conversations = new Map<string, Conversation>();
   private projectsDir: string;
@@ -151,8 +149,8 @@ export class ConversationStore {
     return conversations.map((c) => {
       const firstUserMsg = c.messages.find((m) => m.type === "user");
       const preview = firstUserMsg
-        ? firstUserMsg.content.slice(0, PREVIEW_MAX_LENGTH)
-        : c.messages[0]!.content.slice(0, PREVIEW_MAX_LENGTH);
+        ? firstUserMsg.content.slice(0, 200)
+        : c.messages[0]!.content.slice(0, 200);
 
       return {
         sessionId: c.sessionId,
@@ -175,14 +173,21 @@ export class ConversationStore {
   }
 
   getStats(): StoreStats {
-    const projectMap = new Map<string, { conversations: Conversation[] }>();
+    const projectMap = new Map<
+      string,
+      { cwd: string; conversations: Conversation[] }
+    >();
 
     for (const conv of this.conversations.values()) {
       const existing = projectMap.get(conv.project);
       if (existing) {
         existing.conversations.push(conv);
+        if (!existing.cwd && conv.cwd) existing.cwd = conv.cwd;
       } else {
-        projectMap.set(conv.project, { conversations: [conv] });
+        projectMap.set(conv.project, {
+          cwd: conv.cwd,
+          conversations: [conv],
+        });
       }
     }
 
@@ -194,6 +199,7 @@ export class ConversationStore {
         );
         return {
           project,
+          cwd: data.cwd,
           conversationCount: data.conversations.length,
           messageCount: data.conversations.reduce(
             (sum, c) => sum + c.messageCount,

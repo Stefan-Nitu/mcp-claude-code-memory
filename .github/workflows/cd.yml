@@ -43,7 +43,7 @@ jobs:
     - name: Check if version changed
       id: version
       run: |
-        PUBLISHED_VERSION=$(npm view mcp-claude-code-memory version 2>/dev/null || echo "0.0.0")
+        PUBLISHED_VERSION=$(npm view mcp-claude-code-conversation-history version 2>/dev/null || echo "0.0.0")
         LOCAL_VERSION=$(node -p "require('./package.json').version")
         echo "published=$PUBLISHED_VERSION" >> $GITHUB_OUTPUT
         echo "local=$LOCAL_VERSION" >> $GITHUB_OUTPUT
@@ -60,7 +60,7 @@ jobs:
       run: |
         echo "Publishing version ${{ steps.version.outputs.local }} to npm..."
         npm publish --provenance --access public
-        echo "Successfully published to https://www.npmjs.com/package/mcp-claude-code-memory"
+        echo "Successfully published to https://www.npmjs.com/package/mcp-claude-code-conversation-history"
 
     - name: Create git tag
       if: steps.version.outputs.changed == 'true'

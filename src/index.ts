@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
+import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { ConversationStore } from "./core/conversation-store.js";
@@ -10,11 +12,17 @@ import { historyToolSchema } from "./tools/definitions.js";
 import { createHandler } from "./tools/handler.js";
 import { flushLogs, logger } from "./utils/logger.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJson = JSON.parse(
+  readFileSync(join(__dirname, "../package.json"), "utf-8"),
+);
+
 const PROJECTS_DIR = join(homedir(), ".claude", "projects");
 
 const server = new McpServer({
-  name: "mcp-claude-code-memory",
-  version: "0.1.0",
+  name: "mcp-claude-code-conversation-history",
+  version: packageJson.version,
 });
 
 const store = new ConversationStore(PROJECTS_DIR);
@@ -22,7 +30,7 @@ const index = new SearchIndex();
 const handler = createHandler(store, index);
 
 server.tool(
-  "claude_code_memory",
+  "claude_code_conversation_history",
   `Search across ALL past Claude Code conversations, not just the current one.
 
 vs git log/memory: This searches actual conversation content across every project and session. Git log only shows commits, memory only stores what was explicitly saved.

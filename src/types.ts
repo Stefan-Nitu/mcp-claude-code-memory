@@ -39,6 +39,7 @@ export interface ConversationSummary {
 
 export interface ProjectStats {
   project: string;
+  cwd: string;
   conversationCount: number;
   messageCount: number;
   firstConversation: string;

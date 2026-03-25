@@ -2,7 +2,7 @@
 
 > **Auto-generated** - Run `scripts/generate-project-tree.sh` to update
 
-Last updated: 2026-03-25 21:37:29
+Last updated: 2026-03-25 23:20:05
 
 ## Directory Structure
 
@@ -70,6 +70,7 @@ Last updated: 2026-03-25 21:37:29
 |   |-- conversation-store.test.ts
 |   |-- search-index.test.ts
 |   `-- tools.test.ts
+|-- CLAUDE.md
 |-- LICENSE
 |-- README.md
 |-- biome.json
@@ -77,7 +78,7 @@ Last updated: 2026-03-25 21:37:29
 |-- tsconfig.build.json
 `-- tsconfig.json
 
-12 directories, 57 files
+12 directories, 58 files
 ```
 
 ## Statistics
