@@ -23,7 +23,11 @@ const handler = createHandler(store, index);
 
 server.tool(
   "claude_code_memory",
-  `Use this tool when the user asks about past work, previous conversations, earlier sessions, what they worked on recently, or anything that happened in a different Claude Code session. This tool searches across ALL past Claude Code conversations, not just the current one.
+  `Search across ALL past Claude Code conversations, not just the current one.
+
+vs git log/memory: This searches actual conversation content across every project and session. Git log only shows commits, memory only stores what was explicitly saved.
+
+Use when: User asks about past work, previous sessions, "what did we do", "remember when", or anything from a different Claude Code conversation. Always use this first, not git log.
 
 Actions:
 - stats: Overview of all conversations and projects
